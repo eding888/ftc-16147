@@ -18,6 +18,8 @@ public class Components {
     public static DcMotor rightDriveB = null;
     public static DcMotor shooterA = null;
     public static DcMotor shooterB = null;
-    public static CRServo contServoArm = null;
+    public static DcMotor collector = null;
+    public static DcMotor contServoArm = null;
     public static Servo servoArm = null;
+    public static ColorSensor groundSensor = null;
 }

@@ -48,8 +48,8 @@ public class Robot extends LinearOpMode {
 
     //DECLARE MISC VARIABLES HERE
     double powerRange = 100;
+    double multiplier = -1;
     private boolean servoArmState = true;
-    private boolean contArmState = true;
     //////////////////////////////
 
     //DECLARE OBJECTS HERE
@@ -64,14 +64,15 @@ public class Robot extends LinearOpMode {
         boolean slowMode = false;
 
 
-        Components.leftDriveA = hardwareMap.get(DcMotor.class, "motor3");
-        Components.leftDriveB = hardwareMap.get(DcMotor.class, "motor2");
-        Components.rightDriveA = hardwareMap.get(DcMotor.class, "motor1");
-        Components.rightDriveB = hardwareMap.get(DcMotor.class, "motor0");
+        Components.leftDriveA = hardwareMap.get(DcMotor.class, "motor0");
+        Components.leftDriveB = hardwareMap.get(DcMotor.class, "motor1");
+        Components.rightDriveA = hardwareMap.get(DcMotor.class, "motor2");
+        Components.rightDriveB = hardwareMap.get(DcMotor.class, "motor3");
         Components.shooterA = hardwareMap.get(DcMotor.class, "shooter0");
         Components.shooterB = hardwareMap.get(DcMotor.class, "shooter1");
-        //Components.contServoArm = hardwareMap.get(CRServo.class, "servo0");
-        //Components.servoArm = hardwareMap.get(Servo.class, "servo1");
+        Components.collector = hardwareMap.get(DcMotor.class, "collector");
+        Components.contServoArm = hardwareMap.get(DcMotor.class, "arm0");
+        Components.servoArm = hardwareMap.get(Servo.class, "servo1");
         telemetry.addData("Status", "Initialized ABCD");
         telemetry.update();
 
@@ -79,6 +80,7 @@ public class Robot extends LinearOpMode {
         Components.leftDriveB.setDirection(DcMotor.Direction.FORWARD);
         Components.rightDriveA.setDirection(DcMotor.Direction.REVERSE);
         Components.rightDriveB.setDirection(DcMotor.Direction.REVERSE);
+        Components.contServoArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         waitForStart();
         ///////////////////////////////////////////////////
 
@@ -93,16 +95,19 @@ public class Robot extends LinearOpMode {
             double XPowerRS = Range.clip(rightStickX, -powerRange, powerRange);
             double YPowerLS = Range.clip(leftStickY, -powerRange, powerRange);
 
+            movement.move(-leftStickX * multiplier, leftStickY * multiplier, rightStickX , rightStickY * multiplier, -XPowerLS * multiplier, YPowerLS * multiplier, XPowerRS, YPowerRS * multiplier, slowMode);
 
-            movement.move(leftStickX, leftStickY, rightStickX, rightStickY, XPowerLS, YPowerLS, XPowerRS, YPowerRS, slowMode);
-
-            //armMove();
+            armMove();
             shooterTurn();
+            collectorTurn();
+            if(gamepad1.dpad_left == true) multiplier *= -1;
+            if(gamepad1.left_bumper == true) {
+                slowMode = !slowMode;
+                sleep(200);
+            }
 
-            if(gamepad1.left_bumper == true) slowMode = !slowMode;
 
-
-
+            //todo rebuild onto robot
 
 
         ///////////////////////////////////////////////////////////////////////////////////////////
@@ -112,27 +117,90 @@ public class Robot extends LinearOpMode {
 
 
     }
+    private void rotateLeftAuto(double power, int milliseconds) {
+        Components.leftDriveA.setPower(power);
+        Components.leftDriveB.setPower(power);
+        Components.rightDriveA.setPower(-power);
+        Components.rightDriveB.setPower(-power);
 
-    public void shooterTurn(){
+        sleep(milliseconds);
+
+        Components.leftDriveA.setPower(0);
+        Components.leftDriveB.setPower(0);
+        Components.rightDriveA.setPower(0);
+        Components.rightDriveB.setPower(0);
+
+    }
+
+    private void moveLeftAuto(double power, int milliseconds) {
+
+        Components.leftDriveA.setPower(power);
+        Components.leftDriveB.setPower(-power);
+        Components.rightDriveA.setPower(-power);
+        Components.rightDriveB.setPower(power);
+
+        sleep(milliseconds);
+
+        Components.leftDriveA.setPower(0);
+        Components.leftDriveB.setPower(0);
+        Components.rightDriveA.setPower(0);
+        Components.rightDriveB.setPower(0);
+
+    }
+
+
+    private void collectorTurn(){
+        double leftTrigger = gamepad1.left_trigger;
+        double forwardPower = Range.clip(leftTrigger, -100, 100);
+        Components.collector.setPower(forwardPower);
+
+        double rightTrigger = gamepad1.right_trigger;
+        double backwardPower = -Range.clip(rightTrigger, -100, 100);
+        Components.collector.setPower(backwardPower);
+
+    }
+    private void shooterTurn(){
         if(gamepad1.y == true){
             Components.shooterA.setPower(0);
             Components.shooterB.setPower(0);
             sleep(300);
         }
 
-        if(gamepad1.left_bumper == true){
-            Components.shooterA.setPower(100);
-            Components.shooterB.setPower(-100);
-            sleep(300);
+        if(gamepad1.right_bumper == true){
+
+            Components.collector.setPower(1);
+            Components.shooterA.setPower(0.4);
+            Components.shooterB.setPower(-0.4);
+            sleep(250);
+            Components.collector.setPower(0);
+            Components.shooterA.setPower(0);
+            Components.shooterB.setPower(-0);
+            moveLeftAuto(0.4, 600);
+            rotateLeftAuto(0.4, 240);
+
+
+            Components.shooterA.setPower(-0.75);
+            Components.shooterB.setPower(1);
         }
 
-        if(gamepad1.left_bumper == true){
-            Components.shooterA.setPower(-100);
-            Components.shooterB.setPower(100);
+        if(gamepad1.dpad_right == true){
+
+            Components.collector.setPower(1);
+            Components.shooterA.setPower(0.4);
+            Components.shooterB.setPower(-0.4);
+            sleep(250);
+            Components.collector.setPower(0);
+            Components.shooterA.setPower(0);
+            Components.shooterB.setPower(-0);
+
+
+            Components.shooterA.setPower(-0.85);
+            Components.shooterB.setPower(1);
         }
+
     }
 
-    public void armMove(){
+    private void armMove(){
         if(gamepad1.a == true) {
             if(servoArmState)
                 Components.servoArm.setPosition(100);
@@ -142,18 +210,15 @@ public class Robot extends LinearOpMode {
             sleep(300);
         }
 
-        if(gamepad1.b == true) {
-            if(contArmState)
-                Components.contServoArm.setPower(100);
-            else
-                Components.contServoArm.setPower(-100);
-            contArmState = !contArmState;
-            sleep(300);
+        if(gamepad1.dpad_up){
+            Components.contServoArm.setPower(-0.5);
         }
-
-        if(gamepad1.x == true)
-            Components.contServoArm.setPower(0.211);
-            sleep(300);
+        else if(gamepad1.dpad_down) {
+            Components.contServoArm.setPower(0.5);
+        }
+        else {
+            Components.contServoArm.setPower(0);
+        }
     }
 }
 
