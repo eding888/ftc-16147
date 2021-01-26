@@ -93,7 +93,11 @@ public class Auto extends LinearOpMode {
         Components.servoArm = hardwareMap.get(Servo.class, "servo1");
         Components.collector = hardwareMap.get(DcMotor.class, "collector");
         Components.groundSensor = hardwareMap.get(ColorSensor.class, "sensor0");
+        Components.lowerSensor = hardwareMap.get(ColorSensor.class, "sensor1");
+        Components.upperSensor = hardwareMap.get(ColorSensor.class, "sensor2");
 
+        Components.lowerSensor.enableLed(true);
+        Components.upperSensor.enableLed(true);
         telemetry.addData("Status", "Initialized ABCD");
         telemetry.update();
 
@@ -107,33 +111,60 @@ public class Auto extends LinearOpMode {
 
         //MAIN CODE
         while (opModeIsActive()) {
-            
-            forwardTape(0.5);
-            rotateLeftAuto(0.5, 90);
-            moveAuto(0.5, 5000);
-            moveBackwardAuto(0.5, 750);
-            rotateRightAuto(0.5, 0);
-            moveBackwardAuto(0.3, 750);
-            startShooting();
-            rotateRightAuto(0.5, -5);
-            shootOnce();
-            rotateRightAuto(0.5, -10);
-            shootOnce();
-            rotateRightAuto(0.5, -15);
-            shootOnce();
-            forwardTape(0.3);
-            sleep(100000);
-            //forwardTape(0.3);
-            /*
-            telemetry.addData("Angle: ", angles.firstAngle);
-            telemetry.addData("LeftDriveA: ", Components.leftDriveA.getCurrentPosition());
-            telemetry.addData("LeftDriveB: ", Components.leftDriveB.getCurrentPosition());
-            telemetry.addData("RightDriveA: ", Components.rightDriveA.getCurrentPosition());
-            telemetry.addData("RightDriveB: ", Components.rightDriveB.getCurrentPosition());
+            Components.servoArm.setPosition(100);
+            int rings = 0;
+            int totalTicks = 0;
+            moveForward(0.35, -12);
+            while(rings == 0 && totalTicks < 235) {
+                rings = senseRings();
+                totalTicks += 1;
+            }
+            telemetry.addData("Rings: ", rings);
+            telemetry.addData("Alpha ", Components.upperSensor.alpha());
             telemetry.update();
+            driveEnd();
+            moveBackwardAuto(-0.35, 1300);
+            rotateLeftAuto(0.5, 0);
+            forwardTape(0.5);
+            moveBackwardAuto(-0.5, 750);
+            rotateRightAuto(0.5, -1.5f);
+            driveEnd();
+            startShooting(0.75);
+            allign(0);
+            forwardTape(0.35);
+            switch(rings){
+                case 0:
+                    moveRightAuto(0.35, 1600);
+                    allign(0);
+                    driveEnd();
+                    dropWobble();
+                    allign(0);
+                    break;
+                case 1:
+                    moveAuto(0.35, 900, 0);
+                    moveLeftAuto(0.35, 950);
+                    allign(0);
+                    driveEnd();
+                    dropWobble();
+                    moveBackwardAuto(-0.5, 1500);
+                    forwardTape(0.35);
+                    allign(0);
+                    break;
+                case 4:
+                    moveAuto(0.5, 1500, 0);
+                    moveRightAuto(0.35, 1675);
+                    allign(0);
+                    driveEnd();
+                    dropWobble();
+                    moveBackwardAuto(-0.5, 4000);
+                    forwardTape(0.35);
+                    allign(0);
+                    break;
 
-            */
-            //mainCode();
+            }
+
+            sleep(2000);
+            break;
 
             //todo: test heading output, change methods moveForward, moveForwardAuto, rotateLeftAuto, rotateRightAuto
 
@@ -142,16 +173,16 @@ public class Auto extends LinearOpMode {
 
 
     }
-    private void moveAuto(double power, int ticks) {
+    private void moveAuto(double power, int ticks, float targetAngle) {
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        float targetAngle = angles.firstAngle;
-        double leftSidePower = power;
-        double rightSidePower = power;
+
 
         int currTicks = 0;
 
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         while(currTicks < ticks) {
+            double leftSidePower = power;
+            double rightSidePower = power;
             if (angles.firstAngle < targetAngle) {
                 double adjust = (targetAngle - angles.firstAngle) / 65;
                 rightSidePower += adjust;
@@ -167,8 +198,11 @@ public class Auto extends LinearOpMode {
             Components.rightDriveA.setPower(-rightSidePower);
             Components.rightDriveB.setPower(-rightSidePower);
             sleep(1);
+            currTicks += 1;
             telemetry.update();
+
         }
+        driveEnd();
 
     }
 
@@ -267,6 +301,7 @@ public class Auto extends LinearOpMode {
             Components.rightDriveA.setPower(-rightPower);
             Components.rightDriveB.setPower(-rightPower);
             telemetry.addData("Angle: ", angles.firstAngle);
+
             telemetry.update();
         }
     }
@@ -318,24 +353,57 @@ public class Auto extends LinearOpMode {
         Components.rightDriveB.setPower(0);
     }
 
-    private void startShooting(){
-
-        Components.shooterA.setPower(-0.75);
-        Components.shooterB.setPower(1);
-
-    }
-    private void shootOnce(){
-        Components.collector.setPower(-1);
-        sleep(1000);
+    private void startShooting(double power){
+        Components.collector.setPower(1);
+        sleep(150);
         Components.collector.setPower(0);
-    }
-    private void stopShooting(){
+        Components.shooterA.setPower(-power);
+        Components.shooterB.setPower(1);
+        Components.collector.setPower(-1);
+        sleep(2500);
         Components.shooterA.setPower(0);
         Components.shooterB.setPower(0);
         Components.collector.setPower(0);
+
+
     }
 
 
+
+    private int senseRings(){
+        int ringAmount = 0;
+        if(Components.lowerSensor.alpha() > 80 && Components.upperSensor.alpha() > 65){
+            ringAmount = 4;
+        }
+        else if(Components.lowerSensor.alpha() > 80 && Components.upperSensor.alpha() < 55){
+            ringAmount = 1;
+        }
+
+
+        return ringAmount;
+    }
+    private void allign(float target){
+        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        if(angles.firstAngle < target) rotateLeftAuto(0.5, target);
+        else if(angles.firstAngle > target) rotateRightAuto(0.5, target);
+
+        driveEnd();
+    }
+    private void driveEnd(){
+        Components.leftDriveA.setPower(0);
+        Components.leftDriveB.setPower(0);
+        Components.rightDriveA.setPower(0);
+        Components.rightDriveB.setPower(0);
+    }
+    private void dropWobble(){
+        Components.contServoArm.setPower(0.5);
+        sleep(1500);
+        Components.contServoArm.setPower(0);
+        Components.servoArm.setPosition(0);
+        sleep(500);
+        Components.contServoArm.setPower(-0.5);
+        sleep(1700);
+    }
 }
 
 

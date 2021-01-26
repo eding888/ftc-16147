@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -39,16 +40,23 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+
 @TeleOp(name = "Robot Move", group = "Movement Modable")
 
 public class Robot extends LinearOpMode {
-
+    BNO055IMU imu;
+    Orientation angles;
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
 
     //DECLARE MISC VARIABLES HERE
     double powerRange = 100;
     double multiplier = -1;
+
     private boolean servoArmState = true;
     //////////////////////////////
 
@@ -60,7 +68,11 @@ public class Robot extends LinearOpMode {
     @Override
     public void runOpMode() {
         //INITALIZATION
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
 
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters);
         boolean slowMode = false;
 
 
@@ -100,7 +112,8 @@ public class Robot extends LinearOpMode {
             armMove();
             shooterTurn();
             collectorTurn();
-            if(gamepad1.dpad_left == true) multiplier *= -1;
+
+
             if(gamepad1.left_bumper == true) {
                 slowMode = !slowMode;
                 sleep(200);
@@ -117,36 +130,6 @@ public class Robot extends LinearOpMode {
 
 
     }
-    private void rotateLeftAuto(double power, int milliseconds) {
-        Components.leftDriveA.setPower(power);
-        Components.leftDriveB.setPower(power);
-        Components.rightDriveA.setPower(-power);
-        Components.rightDriveB.setPower(-power);
-
-        sleep(milliseconds);
-
-        Components.leftDriveA.setPower(0);
-        Components.leftDriveB.setPower(0);
-        Components.rightDriveA.setPower(0);
-        Components.rightDriveB.setPower(0);
-
-    }
-
-    private void moveLeftAuto(double power, int milliseconds) {
-
-        Components.leftDriveA.setPower(power);
-        Components.leftDriveB.setPower(-power);
-        Components.rightDriveA.setPower(-power);
-        Components.rightDriveB.setPower(power);
-
-        sleep(milliseconds);
-
-        Components.leftDriveA.setPower(0);
-        Components.leftDriveB.setPower(0);
-        Components.rightDriveA.setPower(0);
-        Components.rightDriveB.setPower(0);
-
-    }
 
 
     private void collectorTurn(){
@@ -155,8 +138,8 @@ public class Robot extends LinearOpMode {
         Components.collector.setPower(forwardPower);
 
         double rightTrigger = gamepad1.right_trigger;
-        double backwardPower = -Range.clip(rightTrigger, -100, 100);
-        Components.collector.setPower(backwardPower);
+        double backwardPower = Range.clip(rightTrigger, -100, 100);
+        Components.collector.setPower(-backwardPower);
 
     }
     private void shooterTurn(){
@@ -171,19 +154,19 @@ public class Robot extends LinearOpMode {
             Components.collector.setPower(1);
             Components.shooterA.setPower(0.4);
             Components.shooterB.setPower(-0.4);
-            sleep(250);
+            sleep(150);
             Components.collector.setPower(0);
             Components.shooterA.setPower(0);
             Components.shooterB.setPower(-0);
             moveLeftAuto(0.4, 600);
-            rotateLeftAuto(0.4, 240);
+            rotateLeftAuto(0.75, 18);
 
 
             Components.shooterA.setPower(-0.75);
             Components.shooterB.setPower(1);
         }
 
-        if(gamepad1.dpad_right == true){
+        if(gamepad1.dpad_left == true){
 
             Components.collector.setPower(1);
             Components.shooterA.setPower(0.4);
@@ -194,7 +177,7 @@ public class Robot extends LinearOpMode {
             Components.shooterB.setPower(-0);
 
 
-            Components.shooterA.setPower(-0.85);
+            Components.shooterA.setPower(-1);
             Components.shooterB.setPower(1);
         }
 
@@ -220,6 +203,86 @@ public class Robot extends LinearOpMode {
             Components.contServoArm.setPower(0);
         }
     }
+
+    private void rotateLeftAuto(double power, float targetAngle) {
+        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double leftPower = power;
+        double rightPower = power;
+        while(angles.firstAngle < targetAngle){
+            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            if(angles.firstAngle < targetAngle) {
+                leftPower = -(power * (Math.abs(Math.abs(angles.firstAngle) - Math.abs(targetAngle)) / 65) + 0.2);
+                rightPower = -leftPower;
+            }
+            else if(angles.firstAngle > targetAngle){
+                leftPower = (power * (Math.abs(Math.abs(angles.firstAngle) - Math.abs(targetAngle)) / 65) + 0.2);
+                rightPower = -leftPower;
+            }
+            Components.leftDriveA.setPower(-leftPower);
+            Components.leftDriveB.setPower(-leftPower);
+            Components.rightDriveA.setPower(-rightPower);
+            Components.rightDriveB.setPower(-rightPower);
+            telemetry.addData("Angle: ", angles.firstAngle);
+            telemetry.update();
+        }
+    }
+
+    private void rotateRightAuto(double power, float targetAngle) {
+
+        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double leftPower = power;
+        double rightPower = power;
+        while(angles.firstAngle > targetAngle){
+            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            if(angles.firstAngle < targetAngle) {
+                leftPower = -(power * (Math.abs(Math.abs(angles.firstAngle) - Math.abs(targetAngle)) / 65) + 0.2);
+                rightPower = -leftPower;
+            }
+            else if(angles.firstAngle > targetAngle){
+                leftPower = (power * (Math.abs(Math.abs(angles.firstAngle) - Math.abs(targetAngle)) / 65) + 0.2);
+                rightPower = -leftPower;
+            }
+            Components.leftDriveA.setPower(-leftPower);
+            Components.leftDriveB.setPower(-leftPower);
+            Components.rightDriveA.setPower(-rightPower);
+            Components.rightDriveB.setPower(-rightPower);
+            telemetry.addData("Angle: ", angles.firstAngle);
+            telemetry.update();
+        }
+
+    }
+
+    private void moveLeftAuto(double power, int milliseconds) {
+
+        Components.leftDriveA.setPower(power);
+        Components.leftDriveB.setPower(-power);
+        Components.rightDriveA.setPower(-power);
+        Components.rightDriveB.setPower(power);
+
+        sleep(milliseconds);
+
+        Components.leftDriveA.setPower(0);
+        Components.leftDriveB.setPower(0);
+        Components.rightDriveA.setPower(0);
+        Components.rightDriveB.setPower(0);
+
+    }
+
+    private void checkOrientation(){
+        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        float heading = angles.firstAngle;
+        if(heading > -70 && heading < 70){
+            multiplier = -1;
+            telemetry.addData("Mult -1", heading);
+        }
+        else{
+            telemetry.addData("Mult 1", heading);
+            multiplier = 1;
+        }
+
+        telemetry.update();
+    }
+
 }
 
 

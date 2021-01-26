@@ -22,4 +22,6 @@ public class Components {
     public static DcMotor contServoArm = null;
     public static Servo servoArm = null;
     public static ColorSensor groundSensor = null;
+    public static ColorSensor upperSensor = null;
+    public static ColorSensor lowerSensor = null;
 }

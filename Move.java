@@ -41,7 +41,7 @@ public class Move extends Components {
     private static void moveForward(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(power);
         leftDriveB.setPower(power);
@@ -52,7 +52,7 @@ public class Move extends Components {
     private static void moveBackward(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(-power);
         leftDriveB.setPower(-power);
@@ -64,7 +64,7 @@ public class Move extends Components {
 
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(-power);
         leftDriveB.setPower(power);
@@ -75,7 +75,7 @@ public class Move extends Components {
     private static void moveRight(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(power);
         leftDriveB.setPower(-power);
@@ -86,7 +86,7 @@ public class Move extends Components {
     private static void rotateLeft(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(-power);
         leftDriveB.setPower(-power);
@@ -97,7 +97,7 @@ public class Move extends Components {
     private static void rotateRight(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(power);
         leftDriveB.setPower(power);
@@ -108,7 +108,7 @@ public class Move extends Components {
     private static void diagonalUpRight(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(power * 1.5);
         leftDriveB.setPower(0);
@@ -119,7 +119,7 @@ public class Move extends Components {
     private static void diagonalUpLeft(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(0);
         leftDriveB.setPower(power * 1.5);
@@ -130,7 +130,7 @@ public class Move extends Components {
     private static void diagonalDownRight(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(0);
         leftDriveB.setPower(-power * 1.5);
@@ -141,7 +141,7 @@ public class Move extends Components {
     private static void diagonalDownLeft(double power) {
 
         if(slowMode)
-            power = power / 2.5;
+            power = power / 2;
 
         leftDriveA.setPower(-power * 1.5);
         leftDriveB.setPower(0);
@@ -154,6 +154,8 @@ public class Move extends Components {
         rightDriveA.setPower(0);
         rightDriveB.setPower(0);
     }
+
+
 
 
 
