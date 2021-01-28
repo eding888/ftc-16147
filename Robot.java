@@ -36,6 +36,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -80,8 +81,8 @@ public class Robot extends LinearOpMode {
         Components.leftDriveB = hardwareMap.get(DcMotor.class, "motor1");
         Components.rightDriveA = hardwareMap.get(DcMotor.class, "motor2");
         Components.rightDriveB = hardwareMap.get(DcMotor.class, "motor3");
-        Components.shooterA = hardwareMap.get(DcMotor.class, "shooter0");
-        Components.shooterB = hardwareMap.get(DcMotor.class, "shooter1");
+        Components.shooterA = hardwareMap.get(DcMotorEx.class, "shooter0");
+        Components.shooterB = hardwareMap.get(DcMotorEx.class, "shooter1");
         Components.collector = hardwareMap.get(DcMotor.class, "collector");
         Components.contServoArm = hardwareMap.get(DcMotor.class, "arm0");
         Components.servoArm = hardwareMap.get(Servo.class, "servo1");
@@ -93,6 +94,8 @@ public class Robot extends LinearOpMode {
         Components.rightDriveA.setDirection(DcMotor.Direction.REVERSE);
         Components.rightDriveB.setDirection(DcMotor.Direction.REVERSE);
         Components.contServoArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Components.shooterA.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Components.shooterB.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         waitForStart();
         ///////////////////////////////////////////////////
 
@@ -112,8 +115,9 @@ public class Robot extends LinearOpMode {
             armMove();
             shooterTurn();
             collectorTurn();
-
-
+            telemetry.addData("A Velocity: ", Components.shooterA.getVelocity());
+            telemetry.addData("B Velocity: ", Components.shooterB.getVelocity());
+            telemetry.update();
             if(gamepad1.left_bumper == true) {
                 slowMode = !slowMode;
                 sleep(200);
@@ -138,8 +142,7 @@ public class Robot extends LinearOpMode {
         Components.collector.setPower(forwardPower);
 
         double rightTrigger = gamepad1.right_trigger;
-        double backwardPower = Range.clip(rightTrigger, -100, 100);
-        Components.collector.setPower(-backwardPower);
+        if(rightTrigger > 0) Components.collector.setPower(-100);
 
     }
     private void shooterTurn(){
@@ -159,11 +162,11 @@ public class Robot extends LinearOpMode {
             Components.shooterA.setPower(0);
             Components.shooterB.setPower(-0);
             moveLeftAuto(0.4, 600);
-            rotateLeftAuto(0.75, 18);
+            rotateLeftAuto(0.75, 19);
 
 
-            Components.shooterA.setPower(-0.75);
-            Components.shooterB.setPower(1);
+            Components.shooterA.setVelocity(-1800);
+            Components.shooterB.setVelocity(2200);
         }
 
         if(gamepad1.dpad_left == true){
@@ -177,8 +180,8 @@ public class Robot extends LinearOpMode {
             Components.shooterB.setPower(-0);
 
 
-            Components.shooterA.setPower(-1);
-            Components.shooterB.setPower(1);
+            Components.shooterA.setVelocity(-2200);
+            Components.shooterB.setVelocity(2200);
         }
 
     }

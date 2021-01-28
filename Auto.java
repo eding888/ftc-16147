@@ -39,6 +39,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -87,8 +88,8 @@ public class Auto extends LinearOpMode {
         Components.leftDriveB = hardwareMap.get(DcMotor.class, "motor2");
         Components.rightDriveA = hardwareMap.get(DcMotor.class, "motor1");
         Components.rightDriveB = hardwareMap.get(DcMotor.class, "motor0");
-        Components.shooterA = hardwareMap.get(DcMotor.class, "shooter0");
-        Components.shooterB = hardwareMap.get(DcMotor.class, "shooter1");
+        Components.shooterA = hardwareMap.get(DcMotorEx.class, "shooter0");
+        Components.shooterB = hardwareMap.get(DcMotorEx.class, "shooter1");
         Components.contServoArm = hardwareMap.get(DcMotor.class, "arm0");
         Components.servoArm = hardwareMap.get(Servo.class, "servo1");
         Components.collector = hardwareMap.get(DcMotor.class, "collector");
@@ -105,6 +106,13 @@ public class Auto extends LinearOpMode {
         Components.leftDriveB.setDirection(DcMotor.Direction.FORWARD);
         Components.rightDriveA.setDirection(DcMotor.Direction.REVERSE);
         Components.rightDriveB.setDirection(DcMotor.Direction.REVERSE);
+
+        Components.leftDriveA.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Components.leftDriveB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Components.rightDriveA.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Components.rightDriveB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Components.shooterA.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Components.shooterB.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         waitForStart();
         ///////////////////////////////////////////////////
@@ -124,17 +132,18 @@ public class Auto extends LinearOpMode {
             telemetry.update();
             driveEnd();
             moveBackwardAuto(-0.35, 1300);
+            moveLeftAuto(0.3, 400);
             rotateLeftAuto(0.5, 0);
             forwardTape(0.5);
-            moveBackwardAuto(-0.5, 750);
-            rotateRightAuto(0.5, -1.5f);
+            moveBackwardAuto(-0.5, 1250);
+            rotateRightAuto(0.5, -2.75f);
             driveEnd();
             startShooting(0.75);
             allign(0);
-            forwardTape(0.35);
+            forwardTape(0.5);
             switch(rings){
                 case 0:
-                    moveRightAuto(0.35, 1600);
+                    moveRightAuto(0.35, 1750);
                     allign(0);
                     driveEnd();
                     dropWobble();
@@ -142,7 +151,7 @@ public class Auto extends LinearOpMode {
                     break;
                 case 1:
                     moveAuto(0.35, 900, 0);
-                    moveLeftAuto(0.35, 950);
+                    moveLeftAuto(0.35, 800);
                     allign(0);
                     driveEnd();
                     dropWobble();
@@ -151,12 +160,12 @@ public class Auto extends LinearOpMode {
                     allign(0);
                     break;
                 case 4:
-                    moveAuto(0.5, 1500, 0);
-                    moveRightAuto(0.35, 1675);
+                    moveAuto(0.75, 1200, 0);
+                    moveRightAuto(0.5, 1500);
                     allign(0);
                     driveEnd();
                     dropWobble();
-                    moveBackwardAuto(-0.5, 4000);
+                    moveBackwardAuto(-1, 1800);
                     forwardTape(0.35);
                     allign(0);
                     break;
@@ -353,12 +362,12 @@ public class Auto extends LinearOpMode {
         Components.rightDriveB.setPower(0);
     }
 
+
+
     private void startShooting(double power){
-        Components.collector.setPower(1);
-        sleep(150);
-        Components.collector.setPower(0);
-        Components.shooterA.setPower(-power);
-        Components.shooterB.setPower(1);
+        Components.shooterA.setVelocity(-1900);
+        Components.shooterB.setVelocity(2300);
+        sleep(1750);
         Components.collector.setPower(-1);
         sleep(2500);
         Components.shooterA.setPower(0);
